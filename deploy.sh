@@ -39,8 +39,8 @@ read -p "Please enter the Google Ads Account: " ACCOUNT
 
 copy_googleads_config() {
   if ! gcloud storage ls gs://$PROJECT_ID > /dev/null 2> /dev/null; then
-    echo "Creating GCS bucket gs://$PROJECT_ID"
-    gcloud storage buckets create --uniform-bucket-level-access gs://$PROJECT_ID
+    echo "Creating GCS bucket gs://$PROJECT_ID in $LOCATION"
+    gcloud storage buckets create --uniform-bucket-level-access --location=$LOCATION gs://$PROJECT_ID
   fi
   echo 'Copying google-ads.yaml to GCS'
   if [[ -f ./google-ads.yaml ]]; then
@@ -135,7 +135,7 @@ deploy() {
     --max-retries=1 \
     --cpu=2 \
     --memory=4Gi \
-    --set-env-vars GOOGLE_CLOUD_PROJECT=$PROJECT_ID,GEMINI_API_KEY=$GEMINI_API_KEY,BQ_DATASET=$DATASET,ACCOUNT=$ACCOUNT,ADS_CONFIG=$ADS_CONFIG,START_DATE=:YYYYMMDD-31,END_DATE=:YYYYMMDD-1,MIN_COST_SHARE=80 \
+    --set-env-vars GOOGLE_CLOUD_PROJECT=$PROJECT_ID,GEMINI_API_KEY=$GEMINI_API_KEY,BQ_DATASET=$DATASET,ACCOUNT=$ACCOUNT,ADS_CONFIG=$ADS_CONFIG,START_DATE=:YYYYMMDD-31,END_DATE=:YYYYMMDD-1,MIN_COST_SHARE=80,TAGGING_ENABLED=0 \
     --args="-l","gcloud"
 }
 

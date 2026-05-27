@@ -19,11 +19,12 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 # Configuration
-LOCATION=us-central1
+# Fragile Phase 1 customizations: EU region for GDPR, arba_test naming for coexistence
+LOCATION=europe-west1
 REPOSITORY=google-marketing-solutions
-DATASET=arba
+DATASET=arba_test
 IMAGE_NAME=arba
-APP_NAME=arba
+APP_NAME=arba_test
 
 init_project_id() {
   if [[ -n "$GOOGLE_CLOUD_PROJECT" ]]; then
@@ -60,7 +61,7 @@ init_common_variables() {
 
 build() {
   echo "Building and submitting image to Cloud Build"
-  gcloud builds submit --tag $IMAGE --project $PROJECT_ID --gcs-log-dir=gs://$PROJECT_ID/$APP_NAME/logs
+  gcloud builds submit --tag $IMAGE --region=$LOCATION --project $PROJECT_ID --gcs-log-dir=gs://$PROJECT_ID/$APP_NAME/logs
 }
 
 check_installation() {

@@ -1,4 +1,4 @@
-FROM ghcr.io/google/garf:latest
+FROM ghcr.io/google/garf@sha256:b52a987bb562ae03c9e42ce520b2e129df6b7b8f7a9f9768e98211542f49069a
 COPY --from=ghcr.io/astral-sh/uv:0.5.18 /uv /bin/
 ENV UV_SYSTEM_PYTHON=1
 WORKDIR /app

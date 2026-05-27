@@ -49,10 +49,11 @@ fi
 if [ -z "$BQ_PROJECT" ]; then
   BQ_PROJECT=$GOOGLE_CLOUD_PROJECT
 fi
+# Fragile patch: respect explicit TAGGING_ENABLED value (0 or 1), default to 0 if unset.
+# Original upstream logic coerced any value to 1, which prevented Phase 1 deploys
+# without AI from honoring TAGGING_ENABLED=0 env var.
 if [ -z "$TAGGING_ENABLED" ]; then
   TAGGING_ENABLED=0
-else
-  TAGGING_ENABLED=1
 fi
 
 run_bq() {
@@ -64,6 +65,8 @@ run_bq() {
   else
     local arba_dataset=${dataset}
   fi
+
+  # Step 1: Always — fetch Google Ads data
   garf -w $WORKFLOW \
     --workflow-include googleads \
     --logger $LOGGER --log-name $LOG_NAME \
@@ -73,25 +76,34 @@ run_bq() {
     --output bq \
     --bq.project=$project --bq.dataset=${arba_dataset}
 
-  cd scripts
-  python landings_score.py --dataset=${arba_dataset} \
-    --log-name=$LOG_NAME --logger-type $LOGGER
-  cd ..
+  # Step 2: AI LP scoring — ONLY if TAGGING_ENABLED (Fragile Phase 1 patch)
+  if [[ $TAGGING_ENABLED -eq 1 ]]; then
+    cd scripts
+    python landings_score.py --dataset=${arba_dataset} \
+      --log-name=$LOG_NAME --logger-type $LOGGER
+    cd ..
+  fi
+
+  # Step 3: Always — create empty AI table placeholders + bq_input view
   garf -w $WORKFLOW \
     --workflow-include empty_bq,bq_input \
     --logger $LOGGER --log-name $LOG_NAME \
     --macro.dataset=${arba_dataset} --macro.target_dataset=${arba_dataset} \
     --source.project=$project
 
-  garf -w $WORKFLOW \
-    --workflow-include tagging \
-    --logger $LOGGER --log-name $LOG_NAME \
-    --macro.dataset=${arba_dataset} --macro.target_dataset=${arba_dataset} \
-    --macro.cost_share=$MIN_COST_SHARE \
-    --output bq \
-    --bq.project=$project --bq.dataset=${arba_dataset} \
-    --source.project=$project
+  # Step 4: AI USP/CTA tagging — ONLY if TAGGING_ENABLED (Fragile Phase 1 patch)
+  if [[ $TAGGING_ENABLED -eq 1 ]]; then
+    garf -w $WORKFLOW \
+      --workflow-include tagging \
+      --logger $LOGGER --log-name $LOG_NAME \
+      --macro.dataset=${arba_dataset} --macro.target_dataset=${arba_dataset} \
+      --macro.cost_share=$MIN_COST_SHARE \
+      --output bq \
+      --bq.project=$project --bq.dataset=${arba_dataset} \
+      --source.project=$project
+  fi
 
+  # Step 5: Always — final BQ transforms
   garf -w $WORKFLOW \
     --workflow-skip googleads,bq_input,empty_bq,tagging \
     --logger $LOGGER --log-name $LOG_NAME \
