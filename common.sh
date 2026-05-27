@@ -19,12 +19,13 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 # Configuration
-# Fragile Phase 1 customizations: EU region for GDPR, arba_test naming for coexistence
+# Fragile Phase 1 customizations: EU region for GDPR, arba-test/arba_test naming.
+# Note: Cloud Run/Scheduler require DNS names (dashes); BQ datasets allow underscores.
 LOCATION=europe-west1
 REPOSITORY=google-marketing-solutions
 DATASET=arba_test
 IMAGE_NAME=arba
-APP_NAME=arba_test
+APP_NAME=arba-test
 
 init_project_id() {
   if [[ -n "$GOOGLE_CLOUD_PROJECT" ]]; then
